@@ -338,26 +338,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     testMode && console.log('request', request)
     switch (request) {
         case 'get_ovice_status':
-            polingOviceStatus('', 0)
-            chrome.storage.local.get(
-                [
-                    'ovice_tab_id',
-                    'ovice_place',
-                    'ovice_place_type',
-                    'ovice_has_logout',
-                    'ovice_has_openspace',
-                    'ovice_has_coffee',
-                    'ovice_has_screenshare',
-                    'ovice_has_mic',
-                    'ovice_mic_on',
-                    'ovice_volume_on',
-                    'ovice_screenshare_on',
-                ],
-                (data) => {
-                    testMode && console.log('ovice_status', data)
-                    sendResponse(data)
-                }
-            )
+            polingOviceTabsStatus()
             break
         case 'action_mic_change':
             actionMicChange()

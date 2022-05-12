@@ -17,6 +17,9 @@ export const IconButton: VFC<IconButtonProps> = ({
     const handleClick = useCallback(
         (event) => {
             if (onClick) onClick(event)
+            if (chrome?.runtime) {
+                chrome.runtime.sendMessage('get_ovice_status', () => {})
+            }
         },
         [onClick]
     )
