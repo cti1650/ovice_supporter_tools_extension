@@ -1,4 +1,5 @@
-import { keyList, TabState } from '@components/Recoil'
+import { keyList } from '@components/Recoil'
+import { TabState } from '@components/Type'
 
 // oViceのタブ情報の変更を確認するための関数
 export const getStorageData = async (tabState: TabState) => {

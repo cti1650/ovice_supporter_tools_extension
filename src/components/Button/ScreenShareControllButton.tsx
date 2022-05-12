@@ -1,10 +1,14 @@
 import { ScreenIcon } from '@components/Icon'
 import { useTabState } from '@components/Recoil'
+import { IconOptionButtonProps } from '@components/Type'
 import { useCallback, useMemo, VFC } from 'react'
 import { IconButton } from './IconButton'
 
-export const ScreenShareControllButton: VFC = () => {
-    const { screenShare, setScreenShare, hasScreenShare } = useTabState()
+export const ScreenShareControllButton: VFC<IconOptionButtonProps> = ({
+    shape,
+    size,
+    data,
+}) => {
     const handleClick = useCallback(() => {
         if (!chrome?.runtime) {
             return
@@ -15,21 +19,21 @@ export const ScreenShareControllButton: VFC = () => {
                 return
             }
             // console.log('test')
-            setScreenShare(!screenShare)
         })
-    }, [screenShare])
+    }, [])
     return useMemo(
         () => (
             <IconButton
                 tips='Operate The Screen Share'
                 title='screen'
-                size='large'
-                on={screenShare}
-                disabled={!hasScreenShare}
+                size={size ?? 'large'}
+                shape={shape}
+                on={data?.screenshareState}
+                disabled={!data?.hasScreenshare}
                 OnIcon={<ScreenIcon />}
                 onClick={handleClick}
             />
         ),
-        [screenShare, hasScreenShare, handleClick]
+        [data, handleClick]
     )
 }

@@ -1,23 +1,6 @@
 const testMode = false
 
 chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.set({
-        ovice_tab_id: 0,
-        ovice_tab_title: '',
-        ovice_place: '',
-        ovice_place_type: 'none',
-        ovice_has_logout: false,
-        ovice_has_openspace: false,
-        ovice_has_coffee: false,
-        ovice_has_screenshare: false,
-        ovice_has_mic: false,
-        ovice_screenshare_on: false,
-        ovice_mic_on: false,
-        ovice_volume_on: true,
-    })
-    chrome.action.setIcon({
-        path: 'icons/icon_32_none.png',
-    })
     testMode && console.log('Installed')
 })
 
@@ -44,102 +27,45 @@ const addScript = (funcOption = {}, callback) => {
     })
 }
 
-const polingOviceStatus = (url, tabId) => {
-    const data = checkOviceUrl(url)
-    if (data) {
-        if (data[1]) {
-            const place = data[1]
-            if (place.indexOf('@room_id-') === 0) {
-                chrome.storage.local.set({ ovice_place_type: 'room' })
-            } else {
-                chrome.storage.local.set({ ovice_place_type: 'openspace' })
-            }
-            chrome.storage.local.set({
-                ovice_tab_id: tabId,
-                ovice_place: place,
-            })
-            chrome.scripting.executeScript(
-                {
-                    target: { tabId: tabId },
-                    files: ['js/oviceConnecter.js', 'js/flagChecker.js'],
-                },
-                () => {
-                    if (chrome.runtime.lastError) {
-                        testMode &&
-                            console.error(
-                                'error:',
-                                chrome.runtime.lastError.message
-                            )
-                        return
-                    }
-                    chrome.storage.local.get(['ovice_mic_on'], (result) => {
-                        if (result.ovice_mic_on) {
-                            chrome.action.setIcon({
-                                path: 'icons/icon_32_on.png',
-                            })
-                        } else {
-                            chrome.action.setIcon({
-                                path: 'icons/icon_32_off.png',
-                            })
-                        }
-                    })
-                }
-            )
-        } else {
-            chrome.storage.local.get(['ovice_tab_id'], (result) => {
-                chrome.tabs.query({ tabId: result.ovice_tab_id }, (tabs) => {
-                    if (tabs.length === 0) {
-                        chrome.storage.local.set({
-                            ovice_tab_id: 0,
-                        })
-                    }
-                    chrome.storage.local.set({
-                        ovice_tab_title: '',
-                        ovice_place: '',
-                        ovice_place_type: 'none',
-                        ovice_has_logout: false,
-                        ovice_has_openspace: false,
-                        ovice_has_coffee: false,
-                        ovice_has_screenshare: false,
-                        ovice_has_mic: false,
-                        ovice_screenshare_on: false,
-                        ovice_mic_on: false,
-                        ovice_volume_on: true,
-                    })
-                    chrome.action.setIcon({
-                        path: 'icons/icon_32_none.png',
-                    })
-                })
-            })
-        }
-    } else {
-        chrome.tabs.query({}, (tabs) => {
-            const oviceTabs = [...tabs].filter((tab) => {
-                return checkOviceUrl(tab.url)
-            })
-            if (oviceTabs.length > 0) {
-                polingOviceStatus(oviceTabs[0].url, oviceTabs[0].id)
-            } else {
-                chrome.storage.local.set({
-                    ovice_tab_id: 0,
-                    ovice_tab_title: '',
-                    ovice_place: '',
-                    ovice_place_type: 'none',
-                    ovice_has_logout: false,
-                    ovice_has_openspace: false,
-                    ovice_has_coffee: false,
-                    ovice_has_screenshare: false,
-                    ovice_has_mic: false,
-                    ovice_screenshare_on: false,
-                    ovice_mic_on: false,
-                    ovice_volume_on: true,
-                })
-                chrome.action.setIcon({
-                    path: 'icons/icon_32_none.png',
-                })
-            }
+const polingOviceTabsStatus = () => {
+    chrome.tabs.query({}, (tabs) => {
+        const oviceTabs = [...tabs].filter((tab) => {
+            return checkOviceUrl(tab.url)
         })
-    }
+        const dataSet = oviceTabs.map(async (tab) => {
+            return new Promise((resolve, reject) => {
+                chrome.scripting.executeScript(
+                    {
+                        target: { tabId: tab.id },
+                        files: ['js/oviceConnecter.js', 'js/flagChecker.js'],
+                    },
+                    (injectionResults) => {
+                        if (chrome.runtime.lastError) {
+                            testMode &&
+                                console.error(
+                                    'error:',
+                                    chrome.runtime.lastError.message
+                                )
+                            reject(null)
+                            return
+                        }
+                        for (const frameResult of injectionResults) {
+                            if (frameResult.result) {
+                                resolve({
+                                    tabId: tab.id,
+                                    windowId: tab.windowId,
+                                    ...frameResult.result,
+                                })
+                            }
+                        }
+                    }
+                )
+            })
+        })
+        Promise.all(dataSet).then((results) => {
+            chrome.storage.local.set({ ovice_tabs_data: results })
+        })
+    })
 }
 
 let counter = 0
@@ -147,28 +73,7 @@ const tick = setInterval(() => {
     testMode && console.log('tick')
     testMode && console.log('counter', counter)
     if (counter % 20 === 0) {
-        polingOviceStatus('', 0)
-        chrome.storage.local.get(
-            [
-                'ovice_tab_id',
-                'ovice_place',
-                'ovice_place_type',
-                'ovice_has_logout',
-                'ovice_has_openspace',
-                'ovice_has_coffee',
-                'ovice_has_screenshare',
-                'ovice_has_mic',
-                'ovice_mic_on',
-                'ovice_volume_on',
-                'ovice_screenshare_on',
-            ],
-            (data) => {
-                testMode && console.log('ovice_status', data)
-                if (data?.ovice_place_type !== 'none') {
-                    counter = 0
-                }
-            }
-        )
+        polingOviceTabsStatus()
     }
     counter++
 }, 4000)
@@ -178,127 +83,15 @@ chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
         if (checkOviceUrl(tab.url)) {
             testMode && console.log('changeInfo', changeInfo)
             if (changeInfo?.status === 'complete' || changeInfo?.favIconUrl) {
-                testMode && console.log('tab url', tab.url)
-                testMode && console.log('changeInfo', changeInfo)
-                chrome.scripting.executeScript(
-                    {
-                        target: { tabId: tabId },
-                        files: [
-                            'js/oviceConnecter.js',
-                            'js/oviceConnecterTick.js',
-                        ],
-                    },
-                    () => {}
-                )
-                polingOviceStatus(tab.url, tabId)
+                polingOviceTabsStatus()
             }
-        } else {
-            polingOviceStatus('', 0)
         }
     }
 })
 
-const deletePopup = (tabId) => {
-    chrome.scripting.executeScript(
-        {
-            target: { tabId: tab.id },
-            func: () => {
-                const items = document?.querySelectorAll(
-                    'div[name=ovice-controller-popup]'
-                )
-                if (items) {
-                    items.forEach((item) => {
-                        item.remove()
-                    })
-                }
-            },
-        },
-        () => {}
-    )
-}
-
-const addPopup = (tabId) => {
-    chrome.storage.local.get(['ovice_mic_on'], (data) => {
-        if (data?.ovice_mic_on) {
-            chrome.scripting.executeScript(
-                {
-                    target: { tabId: tab.id },
-                    func: () => {
-                        let ele = document.createElement('div')
-                        ele.setAttribute('name', 'ovice-controller-popup')
-                        ele.onClick = (event) => {
-                            event.target.remove()
-                        }
-                        ele.innerHTML = 'oVice Voice Sharing'
-                        document.body.append(ele)
-                    },
-                },
-                () => {}
-            )
-        }
-    })
-}
-
-const checkPopup = () => {
-    chrome.tabs.query({}, (tabs) => {
-        const oviceTabs = [...tabs].forEach((tab) => {
-            return checkOviceUrl(tab.url)
-        })
-        if (oviceTabs.length > 0) {
-            chrome.tabs.update(oviceTabs[0].id, { active: true })
-        }
-    })
-}
-
 chrome.tabs.onActivated.addListener((activeInfo) => {
     testMode && console.log('active Info', activeInfo)
-    chrome.tabs.get(activeInfo.tabId, (tab) => {
-        if (checkOviceUrl(tab.url)) {
-            polingOviceStatus(tab.url, tab.id)
-        } else {
-            // TODO: 動作が不安定なため、一旦コメントアウト
-            // chrome.scripting.executeScript(
-            //     {
-            //         target: { tabId: tab.id },
-            //         func: () => {
-            //             const items = document?.querySelectorAll(
-            //                 'div[name=ovice-controller-popup]'
-            //             )
-            //             if (items) {
-            //                 items.forEach((item) => {
-            //                     item.remove()
-            //                 })
-            //             }
-            //         },
-            //     },
-            //     () => {
-            //         chrome.storage.local.get(['ovice_mic_on'], (data) => {
-            //             if (data?.ovice_mic_on) {
-            //                 chrome.scripting.executeScript(
-            //                     {
-            //                         target: { tabId: tab.id },
-            //                         func: () => {
-            //                             let ele = document.createElement('div')
-            //                             ele.setAttribute(
-            //                                 'name',
-            //                                 'ovice-controller-popup'
-            //                             )
-            //                             ele.onClick = (event) => {
-            //                                 event.target.remove()
-            //                             }
-            //                             ele.innerHTML = 'oVice Voice Sharing'
-            //                             document.body.append(ele)
-            //                         },
-            //                     },
-            //                     () => {}
-            //                 )
-            //             }
-            //         })
-            //     }
-            // )
-            polingOviceStatus('', '')
-        }
-    })
+    polingOviceTabsStatus()
 })
 
 const actionMicChange = () => {
@@ -507,39 +300,39 @@ const actionLeave = () => {
     })
 }
 
-chrome.commands.onCommand.addListener((command) => {
-    testMode && console.log(`Command: ${command}`)
-    switch (command) {
-        case 'ovice_option':
-            // chrome.runtime.openOptionsPage(() => {})
-            chrome.windows.create({
-                type: 'popup',
-                url: './dist/index.html',
-                height: 230,
-                width: 450,
-            })
-            break
-        case 'action_mic_change':
-            actionMicChange()
-            break
-        case 'action_screenshare_change':
-            actionScreenshareChange()
-            break
-        case 'action_move_to_ovice':
-            actionMoveToOvice()
-            break
-        case 'action_volume_change':
-            actionVolumeChange()
-            break
-        case 'action_rest':
-            actionRest()
-            break
-        case 'action_leave':
-            actionLeave()
-            break
-        default:
-    }
-})
+// chrome.commands.onCommand.addListener((command) => {
+//     testMode && console.log(`Command: ${command}`)
+//     switch (command) {
+//         case 'ovice_option':
+//             // chrome.runtime.openOptionsPage(() => {})
+//             chrome.windows.create({
+//                 type: 'popup',
+//                 url: './dist/index.html',
+//                 height: 230,
+//                 width: 450,
+//             })
+//             break
+//         case 'action_mic_change':
+//             actionMicChange()
+//             break
+//         case 'action_screenshare_change':
+//             actionScreenshareChange()
+//             break
+//         case 'action_move_to_ovice':
+//             actionMoveToOvice()
+//             break
+//         case 'action_volume_change':
+//             actionVolumeChange()
+//             break
+//         case 'action_rest':
+//             actionRest()
+//             break
+//         case 'action_leave':
+//             actionLeave()
+//             break
+//         default:
+//     }
+// })
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     testMode && console.log('request', request)

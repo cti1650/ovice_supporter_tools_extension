@@ -1,30 +1,14 @@
 import { useCallback, useMemo, VFC } from 'react'
 import cc from 'classcat'
+import { IconButtonProps } from '@components/Type'
 
-type ClassNamesType = {
-    root?: string
-    button?: string
-    label?: string
-}
-
-type Props = {
-    OnIcon?: React.ReactNode
-    OffIcon?: React.ReactNode
-    on?: boolean | undefined
-    onClick?: (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => void
-    size?: 'small' | 'medium' | 'large' | undefined
-    title?: string
-    tips?: string
-    disabled?: boolean
-    classNames?: ClassNamesType
-}
-
-export const IconButton: VFC<Props> = ({
+export const IconButton: VFC<IconButtonProps> = ({
     OnIcon,
     OffIcon,
     on,
     onClick,
     size,
+    shape,
     title,
     tips,
     disabled,
@@ -50,14 +34,24 @@ export const IconButton: VFC<Props> = ({
                         disabled={disabled}
                         title={tips}
                         className={cc([
-                            'flex justify-center items-center bg-[#F6F6F6] shadow rounded-full border border-[#E6E6E6]',
+                            'flex justify-center items-center bg-[#F6F6F6] shadow border border-[#E6E6E6]',
                             {
-                                'w-[60px] h-[60px] text-[30px]':
-                                    size === 'large',
-                                'w-[30px] h-[30px] text-[13px]':
-                                    size === 'small',
-                                'w-[40px] h-[40px] text-[18px]':
-                                    size !== 'large' && size !== 'small',
+                                'rounded-xl w-[90px] h-[60px] text-[30px]':
+                                    size === 'large' && shape === 'square',
+                                'rounded-xl w-[50px] h-[23px] text-[13px]':
+                                    size === 'small' && shape === 'square',
+                                'rounded-xl w-[60px] h-[33px] text-[18px]':
+                                    size !== 'large' &&
+                                    size !== 'small' &&
+                                    shape === 'square',
+                                'rounded-full w-[60px] h-[60px] text-[30px]':
+                                    size === 'large' && shape !== 'square',
+                                'rounded-full w-[30px] h-[30px] text-[13px]':
+                                    size === 'small' && shape !== 'square',
+                                'rounded-full w-[40px] h-[40px] text-[18px]':
+                                    size !== 'large' &&
+                                    size !== 'small' &&
+                                    shape !== 'square',
                             },
                             {
                                 'text-[#E4E4E4] active:bg-[#F6F6F6]': disabled,

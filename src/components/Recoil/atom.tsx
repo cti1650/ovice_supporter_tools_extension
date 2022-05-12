@@ -1,19 +1,5 @@
+import { TabState } from '@components/Type'
 import { atom, RecoilState } from 'recoil'
-
-export type TabState = {
-    tabId: number
-    tabTitle?: string
-    place?: string
-    placeType?: string
-    hasLogout?: boolean | undefined
-    hasOpenSpace?: boolean | undefined
-    hasCoffee?: boolean | undefined
-    hasScreenShare?: boolean | undefined
-    hasMic?: boolean | undefined
-    screenShareOn?: boolean | undefined
-    micOn?: boolean | undefined
-    volumeOn?: boolean | undefined
-}
 
 export const keyList = {
     tabId: 'ovice_tab_id',

@@ -1,10 +1,14 @@
 import { CoffeeIcon } from '@components/Icon'
 import { useTabState } from '@components/Recoil'
+import { IconOptionButtonProps } from '@components/Type'
 import { useCallback, useMemo, VFC } from 'react'
 import { IconButton } from './IconButton'
 
-export const RestControllButton: VFC = () => {
-    const { rest } = useTabState()
+export const RestControllButton: VFC<IconOptionButtonProps> = ({
+    shape,
+    size,
+    data,
+}) => {
     const handleClick = useCallback(() => {
         if (!chrome?.runtime) {
             return
@@ -22,12 +26,13 @@ export const RestControllButton: VFC = () => {
             <IconButton
                 tips='Rest'
                 title='rest'
-                size='medium'
-                disabled={!rest}
+                size={size ?? 'medium'}
+                shape={shape}
+                disabled={!data?.hasRest}
                 OnIcon={<CoffeeIcon />}
                 onClick={handleClick}
             />
         ),
-        [rest, handleClick]
+        [data, handleClick]
     )
 }

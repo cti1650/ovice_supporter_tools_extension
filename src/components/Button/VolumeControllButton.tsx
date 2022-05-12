@@ -1,10 +1,14 @@
 import { OffVolumeIcon, OnVolumeIcon } from '@components/Icon'
 import { useTabState } from '@components/Recoil'
+import { IconOptionButtonProps } from '@components/Type'
 import { useCallback, useMemo, VFC } from 'react'
 import { IconButton } from './IconButton'
 
-export const VolumeControllButton: VFC = () => {
-    const { volume, tab, hasMic } = useTabState()
+export const VolumeControllButton: VFC<IconOptionButtonProps> = ({
+    shape,
+    size,
+    data,
+}) => {
     const handleClick = useCallback(() => {
         if (!chrome?.runtime) {
             return
@@ -16,20 +20,21 @@ export const VolumeControllButton: VFC = () => {
             }
             // console.log('test')
         })
-    }, [volume, tab])
+    }, [])
     return useMemo(
         () => (
             <IconButton
                 tips='Operate The Volume'
                 title='volume'
-                size='large'
-                on={volume}
-                disabled={!hasMic}
+                size={size ?? 'large'}
+                shape={shape}
+                on={data?.volumeState}
+                disabled={!data?.hasMic}
                 OnIcon={<OnVolumeIcon />}
                 OffIcon={<OffVolumeIcon />}
                 onClick={handleClick}
             />
         ),
-        [volume, tab, hasMic, handleClick]
+        [data, handleClick]
     )
 }

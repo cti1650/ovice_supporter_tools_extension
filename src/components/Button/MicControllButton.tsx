@@ -1,36 +1,38 @@
 import { OffMicIcon, OnMicIcon } from '@components/Icon'
 import { useTabState } from '@components/Recoil'
+import { IconOptionButtonProps } from '@components/Type'
+import { data } from 'autoprefixer'
 import { useCallback, useMemo, VFC } from 'react'
 import { IconButton } from './IconButton'
 
-export const MicControllButton: VFC = () => {
-    const { mic, setMic, hasMic } = useTabState()
+export const MicControllButton: VFC<IconOptionButtonProps> = ({
+    shape,
+    size,
+    data,
+}) => {
     const handleClick = useCallback(() => {
         if (!chrome?.runtime) {
             return
         }
-        chrome?.runtime.sendMessage('action_mic_change', () => {
-            if (chrome.runtime.lastError) {
-                // console.error('error:', chrome.runtime.lastError.message)
-                return
-            }
-            // console.log('test')
-            setMic(!mic)
+        chrome.scripting.executeScript({
+            target: { tabId: data?.tabId },
+            files: ['js/oviceConnecter.js', 'js/micChange.js'],
         })
-    }, [mic])
+    }, [data])
     return useMemo(
         () => (
             <IconButton
                 tips='Operate The Mic'
                 title='mic'
-                size='large'
-                on={mic}
-                disabled={!hasMic}
+                size={size ?? 'large'}
+                shape={shape}
+                on={data?.micState}
+                disabled={!data?.hasMic}
                 OnIcon={<OnMicIcon />}
                 OffIcon={<OffMicIcon />}
                 onClick={handleClick}
             />
         ),
-        [mic, hasMic, handleClick]
+        [data, handleClick]
     )
 }
