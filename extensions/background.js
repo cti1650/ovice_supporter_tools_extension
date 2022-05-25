@@ -5,7 +5,7 @@ chrome.runtime.onInstalled.addListener(() => {
 })
 
 const checkOviceUrl = (url) => {
-    const reg = /https?:\/\/.*?\.ovice\.in\/(@room_id-\d+|@\d+,\d+)+/
+    const reg = /https?:\/\/.*?\.ovice\.in(\/(@room_id-\d+|@\d+,\d+)+)?/
     return reg.exec(url)
 }
 
@@ -122,10 +122,7 @@ let counter = 0
 const tick = setInterval(() => {
     testMode && console.log('tick')
     testMode && console.log('counter', counter)
-    if (counter % 5 === 0) {
-        polingOviceTabsStatus()
-    }
-    counter++
+    polingOviceTabsStatus()
 }, 1000)
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
