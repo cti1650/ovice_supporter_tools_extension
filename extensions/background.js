@@ -62,7 +62,57 @@ const polingOviceTabsStatus = () => {
                 )
             })
         })
-        Promise.all(dataSet).then((results) => {
+        Promise.all(dataSet).then(async (results) => {
+            let mentioned = false
+            let messsageCount = 0
+            results.forEach((item) => {
+                if (item.openChatBox) {
+                    mentioned = true
+                } else {
+                    if (item.newChatMessageCount > 0) {
+                        messsageCount += item.newChatMessageCount
+                    }
+                }
+            })
+            const micHasSpaceCount = results.filter((item) => {
+                return item.hasMic
+            }).length
+            const micOnSpaceCount = results.filter((item) => {
+                return item.micState
+            }).length
+            if (micHasSpaceCount > 0) {
+                if (micOnSpaceCount > 0) {
+                    chrome.action.setIcon({
+                        path: 'icons/icon_32_on.png',
+                    })
+                } else {
+                    chrome.action.setIcon({
+                        path: 'icons/icon_32_off.png',
+                    })
+                }
+            } else {
+                chrome.action.setIcon({
+                    path: 'icons/icon_32_none.png',
+                })
+            }
+            if (mentioned) {
+                await chrome.action.setBadgeBackgroundColor({
+                    color: '#ff0000',
+                })
+                await chrome.action.setBadgeText({ text: '!' })
+            } else if (messsageCount > 0) {
+                await chrome.action.setBadgeBackgroundColor({
+                    color: '#0000ff',
+                })
+                await chrome.action.setBadgeText({
+                    text: `${messsageCount}`,
+                })
+            } else {
+                await chrome.action.setBadgeBackgroundColor({
+                    color: '#0000ff',
+                })
+                await chrome.action.setBadgeText({ text: '' })
+            }
             chrome.storage.local.set({ ovice_tabs_data: results })
         })
     })
@@ -72,11 +122,11 @@ let counter = 0
 const tick = setInterval(() => {
     testMode && console.log('tick')
     testMode && console.log('counter', counter)
-    if (counter % 20 === 0) {
+    if (counter % 5 === 0) {
         polingOviceTabsStatus()
     }
     counter++
-}, 4000)
+}, 1000)
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
     if (~tab.url.indexOf('ovice.in')) {

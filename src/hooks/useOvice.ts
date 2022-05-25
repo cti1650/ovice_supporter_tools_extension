@@ -43,7 +43,7 @@ export const useOvice = () => {
         if (!chrome?.storage?.local) {
             return
         }
-        chrome.storage.local.get(['ovice_tabs_data'], (storageData) => {
+        chrome.storage.local.get(['ovice_tabs_data'], async (storageData) => {
             const newData = storageData.ovice_tabs_data
             if (data?.length !== newData?.length) {
                 console.log(newData)
@@ -77,6 +77,7 @@ export const useOvice = () => {
             clearInterval(tick)
         }
     }, [getStatus])
+
     return useMemo(() => {
         return {
             data,
