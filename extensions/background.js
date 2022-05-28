@@ -205,17 +205,73 @@ const actionScreenshareChange = () => {
     })
 }
 
-const actionMoveToOvice = () => {
-    chrome.storage.local.get(['ovice_tab_id'], (data) => {
-        chrome.tabs.update(
-            Number(data.ovice_tab_id),
-            { selected: true },
-            function (tab) {
-                chrome.windows.update(tab.windowId, { focused: true })
-                sendResponse({})
-            }
-        )
-    })
+const actionMoveToOvice = (tabIndex = null) => {
+    if (tabIndex) {
+        chrome.storage.local.get((data) => {
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                const tabIds = tabs.map((tab) => tab.id)
+                const oviceTabs = data?.ovice_tabs_data.map(
+                    (item) => item?.tabId
+                )
+                const moveTabList = oviceTabs.filter((v, i, arr) => {
+                    const moveIndex = i - tabIndex
+                    if (0 <= moveIndex && moveIndex < arr.length) {
+                        const id = arr[moveIndex]
+                        if (!~tabIds.indexOf(id)) {
+                            return false
+                        }
+                        if (id) {
+                            return true
+                        }
+                    }
+                })
+                if (moveTabList?.length > 0) {
+                    chrome.tabs.update(
+                        moveTabList[0],
+                        { selected: true },
+                        function (tab) {
+                            chrome.windows.update(tab.windowId, {
+                                focused: true,
+                            })
+                        }
+                    )
+                } else {
+                    if (tabIndex === 1) {
+                        chrome.tabs.update(
+                            oviceTabs[0],
+                            { selected: true },
+                            function (tab) {
+                                chrome.windows.update(tab.windowId, {
+                                    focused: true,
+                                })
+                            }
+                        )
+                    } else {
+                        chrome.tabs.update(
+                            oviceTabs[oviceTabs.length - 1],
+                            { selected: true },
+                            function (tab) {
+                                chrome.windows.update(tab.windowId, {
+                                    focused: true,
+                                })
+                            }
+                        )
+                    }
+                }
+            })
+        })
+    } else {
+        chrome.storage.local.get(['ovice_tab_id'], (data) => {
+            chrome.tabs.update(
+                Number(data.ovice_tab_id),
+                { selected: true },
+                function (tab) {
+                    chrome.windows.update(tab.windowId, { focused: true })
+                    sendResponse({})
+                }
+            )
+        })
+    }
 }
 
 const actionVolumeChange = () => {
@@ -347,39 +403,27 @@ const actionLeave = () => {
     })
 }
 
-// chrome.commands.onCommand.addListener((command) => {
-//     testMode && console.log(`Command: ${command}`)
-//     switch (command) {
-//         case 'ovice_option':
-//             // chrome.runtime.openOptionsPage(() => {})
-//             chrome.windows.create({
-//                 type: 'popup',
-//                 url: './dist/index.html',
-//                 height: 230,
-//                 width: 450,
-//             })
-//             break
-//         case 'action_mic_change':
-//             actionMicChange()
-//             break
-//         case 'action_screenshare_change':
-//             actionScreenshareChange()
-//             break
-//         case 'action_move_to_ovice':
-//             actionMoveToOvice()
-//             break
-//         case 'action_volume_change':
-//             actionVolumeChange()
-//             break
-//         case 'action_rest':
-//             actionRest()
-//             break
-//         case 'action_leave':
-//             actionLeave()
-//             break
-//         default:
-//     }
-// })
+chrome.commands.onCommand.addListener((command) => {
+    testMode && console.log(`Command: ${command}`)
+    switch (command) {
+        case 'ovice_option':
+            // chrome.runtime.openOptionsPage(() => {})
+            chrome.windows.create({
+                type: 'popup',
+                url: './dist/index.html',
+                height: 230,
+                width: 450,
+            })
+            break
+        case 'move_to_ovice_tab_prev':
+            actionMoveToOvice(-1)
+            break
+        case 'move_to_ovice_tab_next':
+            actionMoveToOvice(1)
+            break
+        default:
+    }
+})
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     testMode && console.log('request', request)

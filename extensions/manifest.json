@@ -1,7 +1,7 @@
 {
   "name": "oVice Supporter Tools Extension",
   "description": "oVice Supporter Tools Extension",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "action": {
     "default_popup": "./dist/index.html",
     "default_icon": {
@@ -21,6 +21,20 @@
       },
       "description": "oVice Controllerをポップアップで開く",
       "global": true
+    },
+    "move_to_ovice_tab_prev": {
+      "suggested_key": {
+        "mac": "Alt+Left"
+      },
+      "description": "アクティブなoViceスペースのタブの左側にあるタブを開く",
+      "global": false
+    },
+    "move_to_ovice_tab_next": {
+      "suggested_key": {
+        "mac": "Alt+Right"
+      },
+      "description": "アクティブなoViceスペースのタブの右側にあるタブを開く",
+      "global": false
     },
     "_execute_action": {
       "suggested_key": {
