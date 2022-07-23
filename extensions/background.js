@@ -5,7 +5,7 @@ chrome.runtime.onInstalled.addListener(() => {
 })
 
 const checkOviceUrl = (url) => {
-    const reg = /https?:\/\/.*?\.ovice\.in(\/(@room_id-\d+|@\d+,\d+)+)?/
+    const reg = /https?:\/\/.*?\.ovice\.in(\/|\/(@room_id-\d+|@\d+,\d+)+)?/
     return reg.exec(url)
 }
 
@@ -408,12 +408,25 @@ chrome.commands.onCommand.addListener((command) => {
     switch (command) {
         case 'ovice_option':
             // chrome.runtime.openOptionsPage(() => {})
-            chrome.windows.create({
-                type: 'popup',
-                url: './dist/index.html',
-                height: 230,
-                width: 450,
-            })
+            chrome.windows.create(
+                {
+                    type: 'popup',
+                    url: './dist/index.html',
+                    height: 230,
+                    width: 450,
+                },
+                (window) => {
+                    chrome.windows.update(
+                        window.id,
+                        { state: 'fullscreen' },
+                        () => {
+                            chrome.windows.update(window.id, {
+                                state: 'normal',
+                            })
+                        }
+                    )
+                }
+            )
             break
         case 'move_to_ovice_tab_prev':
             actionMoveToOvice(-1)

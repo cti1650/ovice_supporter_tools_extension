@@ -1,7 +1,7 @@
 {
   "name": "oVice Supporter Tools Extension",
   "description": "oVice Supporter Tools Extension",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "action": {
     "default_popup": "./dist/index.html",
     "default_icon": {
@@ -11,7 +11,8 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
   },
   "commands": {
     "ovice_option": {
