@@ -5,7 +5,8 @@ chrome.runtime.onInstalled.addListener(() => {
 })
 
 const checkOviceUrl = (url) => {
-    const reg = /https?:\/\/.*?\.ovice\.in(\/|\/(@room_id-\d+|@\d+,\d+)+)?/
+    const reg =
+        /https?:\/\/(.*?\.ovice\.in|(.*?\.staging|staging\..*?)\.ovice\.io)(?!\/console)(\/|\/(@room_id-\d+|@\d+,\d+)+)?/
     return reg.exec(url)
 }
 
@@ -126,11 +127,16 @@ const tick = setInterval(() => {
 }, 1000)
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (~tab.url.indexOf('ovice.in')) {
-        if (checkOviceUrl(tab.url)) {
-            testMode && console.log('changeInfo', changeInfo)
-            if (changeInfo?.status === 'complete' || changeInfo?.favIconUrl) {
-                polingOviceTabsStatus()
+    if (~tab.url.indexOf('.ovice.in') || tab.url.indexOf('/console/')) {
+        if (~tab.url.indexOf('.ovice.io') && ~tab.url.indexOf('staging')) {
+            if (checkOviceUrl(tab.url)) {
+                testMode && console.log('changeInfo', changeInfo)
+                if (
+                    changeInfo?.status === 'complete' ||
+                    changeInfo?.favIconUrl
+                ) {
+                    polingOviceTabsStatus()
+                }
             }
         }
     }
