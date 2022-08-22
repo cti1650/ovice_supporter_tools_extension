@@ -29,94 +29,103 @@ const addScript = (funcOption = {}, callback) => {
 }
 
 const polingOviceTabsStatus = () => {
-    chrome.tabs.query({}, (tabs) => {
-        const oviceTabs = [...tabs].filter((tab) => {
-            return checkOviceUrl(tab.url)
-        })
-        const dataSet = oviceTabs.map(async (tab) => {
-            return new Promise((resolve, reject) => {
-                chrome.scripting.executeScript(
-                    {
-                        target: { tabId: tab.id },
-                        files: ['js/oviceConnecter.js', 'js/flagChecker.js'],
-                    },
-                    (injectionResults) => {
-                        if (chrome.runtime.lastError) {
-                            testMode &&
-                                console.error(
-                                    'error:',
-                                    chrome.runtime.lastError.message
-                                )
-                            reject(null)
-                            return
-                        }
-                        for (const frameResult of injectionResults) {
-                            if (frameResult.result) {
-                                resolve({
-                                    tabId: tab.id,
-                                    windowId: tab.windowId,
-                                    ...frameResult.result,
-                                })
+    chrome.tabs.query(
+        {
+            url: ['https://*.ovice.in/*', 'https://*.ovice.io/*'],
+        },
+        (tabs) => {
+            console.log(tabs)
+            const oviceTabs = [...tabs].filter((tab) => {
+                return checkOviceUrl(tab.url)
+            })
+            const dataSet = oviceTabs.map(async (tab) => {
+                return new Promise((resolve, reject) => {
+                    chrome.scripting.executeScript(
+                        {
+                            target: { tabId: tab.id },
+                            files: [
+                                'js/oviceConnecter.js',
+                                'js/flagChecker.js',
+                            ],
+                        },
+                        (injectionResults) => {
+                            if (chrome.runtime.lastError) {
+                                testMode &&
+                                    console.error(
+                                        'error:',
+                                        chrome.runtime.lastError.message
+                                    )
+                                reject(null)
+                                return
+                            }
+                            for (const frameResult of injectionResults) {
+                                if (frameResult.result) {
+                                    resolve({
+                                        tabId: tab.id,
+                                        windowId: tab.windowId,
+                                        ...frameResult.result,
+                                    })
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                })
             })
-        })
-        Promise.all(dataSet).then(async (results) => {
-            let mentioned = false
-            let messsageCount = 0
-            results.forEach((item) => {
-                if (item.openChatBox) {
-                    mentioned = true
+            Promise.all(dataSet).then(async (results) => {
+                let mentioned = false
+                let messsageCount = 0
+                results.forEach((item) => {
+                    if (item.openChatBox) {
+                        mentioned = true
+                    } else {
+                        if (item.newChatMessageCount > 0) {
+                            messsageCount += item.newChatMessageCount
+                        }
+                    }
+                })
+                const micHasSpaceCount = results.filter((item) => {
+                    return item.hasMic
+                }).length
+                const micOnSpaceCount = results.filter((item) => {
+                    return item.micState
+                }).length
+                if (micHasSpaceCount > 0) {
+                    if (micOnSpaceCount > 0) {
+                        chrome.action.setIcon({
+                            path: 'icons/icon_32_on.png',
+                        })
+                    } else {
+                        chrome.action.setIcon({
+                            path: 'icons/icon_32_off.png',
+                        })
+                    }
                 } else {
-                    if (item.newChatMessageCount > 0) {
-                        messsageCount += item.newChatMessageCount
-                    }
-                }
-            })
-            const micHasSpaceCount = results.filter((item) => {
-                return item.hasMic
-            }).length
-            const micOnSpaceCount = results.filter((item) => {
-                return item.micState
-            }).length
-            if (micHasSpaceCount > 0) {
-                if (micOnSpaceCount > 0) {
                     chrome.action.setIcon({
-                        path: 'icons/icon_32_on.png',
+                        path: 'icons/icon_32_none.png',
+                    })
+                }
+                if (mentioned) {
+                    await chrome.action.setBadgeBackgroundColor({
+                        color: '#ff0000',
+                    })
+                    await chrome.action.setBadgeText({ text: '!' })
+                } else if (messsageCount > 0) {
+                    await chrome.action.setBadgeBackgroundColor({
+                        color: '#0000ff',
+                    })
+                    await chrome.action.setBadgeText({
+                        text: `${messsageCount}`,
                     })
                 } else {
-                    chrome.action.setIcon({
-                        path: 'icons/icon_32_off.png',
+                    await chrome.action.setBadgeBackgroundColor({
+                        color: '#0000ff',
                     })
+                    await chrome.action.setBadgeText({ text: '' })
                 }
-            } else {
-                chrome.action.setIcon({
-                    path: 'icons/icon_32_none.png',
-                })
-            }
-            if (mentioned) {
-                await chrome.action.setBadgeBackgroundColor({
-                    color: '#ff0000',
-                })
-                await chrome.action.setBadgeText({ text: '!' })
-            } else if (messsageCount > 0) {
-                await chrome.action.setBadgeBackgroundColor({
-                    color: '#0000ff',
-                })
-                await chrome.action.setBadgeText({
-                    text: `${messsageCount}`,
-                })
-            } else {
-                await chrome.action.setBadgeBackgroundColor({
-                    color: '#0000ff',
-                })
-                await chrome.action.setBadgeText({ text: '' })
-            }
-            chrome.storage.local.set({ ovice_tabs_data: results })
-        })
-    })
+                chrome.storage.local.set({ ovice_tabs_data: results })
+            })
+        }
+    )
 }
 
 let counter = 0

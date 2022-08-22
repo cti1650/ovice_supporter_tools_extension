@@ -1,7 +1,7 @@
 {
   "name": "oVice Supporter Tools Extension",
   "description": "oVice Supporter Tools Extension",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "action": {
     "default_popup": "./dist/index.html",
     "default_icon": {
