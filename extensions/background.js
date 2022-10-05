@@ -6,7 +6,7 @@ chrome.runtime.onInstalled.addListener(() => {
 
 const checkOviceUrl = (url) => {
     const reg =
-        /https?:\/\/(.*?\.ovice\.in|(.*?\.staging|staging\..*?)\.ovice\.io)(?!\/console)(\/|\/(@room_id-\d+|@\d+,\d+)+)?/
+        /https?:\/\/(.*?\.ovice\.in|(.*?\.staging|staging\.(?!phpmyadmin).*?)\.ovice\.io)(?!\/console)(\/|\/(@room_id-\d+|@\d+,\d+)+)?/
     return reg.exec(url)
 }
 
